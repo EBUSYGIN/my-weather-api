@@ -1,4 +1,7 @@
 /node_modules
 /dist
-/prisma/devs
 /coverage
+
+/generated/prisma
+
+/.env
