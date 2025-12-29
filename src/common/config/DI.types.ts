@@ -3,4 +3,5 @@ export const DI_TYPES = {
   LogService: Symbol.for('LogService'),
   EnvService: Symbol.for('EnvService'),
   DatabaseService: Symbol.for('DatabaseService'),
+  UserController: Symbol.for('UserController'),
 };

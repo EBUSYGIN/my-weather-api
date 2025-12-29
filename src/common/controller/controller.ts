@@ -7,7 +7,7 @@ import { inject } from 'inversify';
 export abstract class Controller implements IController {
   private _router: Router;
 
-  constructor(@inject(DI_TYPES.LogService) private logService: ILogService) {
+  constructor(@inject(DI_TYPES.LogService) protected logService: ILogService) {
     this._router = Router();
   }
 
@@ -26,9 +26,14 @@ export abstract class Controller implements IController {
   };
 
   protected bindRoutes = (routes: IRoute[]): void => {
+    this.logService.log('Подключение путей:');
     for (const route of routes) {
       this.logService.log(`[${route.method}] ${route.path}`);
-      this._router[route.method](route.path, route.function);
+      this.router[route.method](
+        route.path,
+        route.middleware ? route.middleware?.map((middleware) => middleware.execute) : [],
+        route.function,
+      );
     }
   };
 }

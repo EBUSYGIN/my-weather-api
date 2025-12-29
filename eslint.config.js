@@ -37,6 +37,7 @@ export default [
       ],
       '@typescript-eslint/no-require-imports': 'off',
       'no-unused-vars': 'off',
+      '@typescript-eslint/no-empty-object-type': 'off',
     },
   },
 
