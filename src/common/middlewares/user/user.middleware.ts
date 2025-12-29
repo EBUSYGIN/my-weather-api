@@ -7,6 +7,11 @@ export class UserMiddleware implements IMiddleware {
   constructor(private classToValidate: ClassConstructor<object>) {}
 
   execute = ({ body }: Request, res: Response, next: NextFunction): void => {
+    if (!body) {
+      res.status(422).send({ message: 'Неправильное тело запроса' });
+      return;
+    }
+
     const instance = plainToInstance(this.classToValidate, body);
     validate(instance).then((errors) => {
       if (errors.length) {

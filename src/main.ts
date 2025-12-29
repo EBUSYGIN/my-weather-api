@@ -8,6 +8,8 @@ import { EnvService } from './common/env-service/env.service';
 import { IDatabaseService } from './common/database-service/database-service.interface';
 import { DatabaseService } from './common/database-service/database-service';
 import { UserController } from './modules/user/controller/user.controller';
+import type { IUserService } from './modules/user/service/user.service.interface';
+import { UserService } from './modules/user/service/user.service';
 
 const appBindings = new ContainerModule((options: ContainerModuleLoadOptions) => {
   options.bind<App>(DI_TYPES.App).to(App).inSingletonScope();
@@ -17,6 +19,9 @@ const appBindings = new ContainerModule((options: ContainerModuleLoadOptions) =>
 
   //controllers
   options.bind<UserController>(DI_TYPES.UserController).to(UserController).inSingletonScope();
+
+  //services
+  options.bind<IUserService>(DI_TYPES.UserService).to(UserService);
 });
 
 async function boot(): Promise<void> {
