@@ -21,8 +21,7 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   favoriteCities FavoriteCity[]
-
-
+  refreshTokens   RefreshToken[]
 }
 
 model FavoriteCity {
@@ -38,4 +37,19 @@ model FavoriteCity {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, cityName, country])
+}
+
+model RefreshToken {
+  id          String   @id @default(cuid())
+  token       String   @unique
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userAgent   String? 
+  replacedBy  String? 
+  isRevoked   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  
+  @@index([userId])
+  @@index([isRevoked])
+  @@map("refresh_tokens")
 }

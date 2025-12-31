@@ -10,18 +10,22 @@ import { DatabaseService } from './common/database-service/database-service';
 import { UserController } from './modules/user/controller/user.controller';
 import type { IUserService } from './modules/user/service/user.service.interface';
 import { UserService } from './modules/user/service/user.service';
+import { IAuthService } from './common/auth/auth.service.interface';
+import { AuthService } from './common/auth/auth.service';
 
 const appBindings = new ContainerModule((options: ContainerModuleLoadOptions) => {
+  //common
   options.bind<App>(DI_TYPES.App).to(App).inSingletonScope();
   options.bind<ILogService>(DI_TYPES.LogService).to(LogService).inSingletonScope();
   options.bind<IEnvService>(DI_TYPES.EnvService).to(EnvService).inSingletonScope();
   options.bind<IDatabaseService>(DI_TYPES.DatabaseService).to(DatabaseService).inSingletonScope();
+  options.bind<IAuthService>(DI_TYPES.AuthService).to(AuthService).inSingletonScope();
 
   //controllers
   options.bind<UserController>(DI_TYPES.UserController).to(UserController).inSingletonScope();
 
   //services
-  options.bind<IUserService>(DI_TYPES.UserService).to(UserService);
+  options.bind<IUserService>(DI_TYPES.UserService).to(UserService).inSingletonScope();
 });
 
 async function boot(): Promise<void> {

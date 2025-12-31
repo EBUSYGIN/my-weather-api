@@ -6,4 +6,5 @@ export const DI_TYPES = {
   UserController: Symbol.for('UserController'),
   UserEntity: Symbol.for('UserEntity'),
   UserService: Symbol.for('UserService'),
+  AuthService: Symbol.for('AuthService'),
 };

@@ -32,12 +32,8 @@ export class UserController extends Controller implements IUserController {
     ]);
   }
 
-  register = async (req: Request<{}, {}, UserRegisterDTO>, res: Response): Promise<void> => {
-    const createdUser = await this.userService.create(
-      req.body.name,
-      req.body.email,
-      req.body.password,
-    );
+  register = async ({ body }: Request<{}, {}, UserRegisterDTO>, res: Response): Promise<void> => {
+    const createdUser = await this.userService.create(body.name, body.email, body.password);
     if (typeof createdUser == 'string') {
       return this.sendError(res, new Error(createdUser), 500);
     }
