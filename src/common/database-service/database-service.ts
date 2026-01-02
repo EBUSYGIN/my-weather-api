@@ -8,7 +8,7 @@ import { IDatabaseService } from './database-service.interface';
 
 @injectable()
 export class DatabaseService implements IDatabaseService {
-  private prisma: PrismaClient;
+  prisma: PrismaClient;
 
   constructor(
     @inject(DI_TYPES.LogService) private logService: ILogService,
