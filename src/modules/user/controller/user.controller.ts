@@ -8,12 +8,16 @@ import { UserRegisterDTO } from '../dto/user.register.dto';
 import { UserMiddleware } from '../../../common/middlewares/user/user.middleware';
 import { UserLoginDTO } from '../dto/user-login.dto';
 import type { IUserService } from '../service/user.service.interface';
+import { User } from '../../../../generated/prisma/client';
+import { AuthMiddleware } from '../../../common/middlewares/auth/auth.middleware';
+import type { IAuthService } from '../../../common/auth/auth.service.interface';
 
 @injectable()
 export class UserController extends Controller implements IUserController {
   constructor(
     @inject(DI_TYPES.LogService) logService: ILogService,
     @inject(DI_TYPES.UserService) private userService: IUserService,
+    @inject(DI_TYPES.AuthService) private authService: IAuthService,
   ) {
     super(logService);
     this.bindRoutes([
@@ -29,6 +33,12 @@ export class UserController extends Controller implements IUserController {
         function: this.register,
         middleware: [new UserMiddleware(UserRegisterDTO)],
       },
+      {
+        method: 'get',
+        path: '/info',
+        function: this.info,
+        middleware: [new AuthMiddleware(this.authService)],
+      },
     ]);
   }
 
@@ -42,5 +52,11 @@ export class UserController extends Controller implements IUserController {
 
   login = async (req: Request, res: Response): Promise<void> => {
     return this.sendSuccess(res, { success: 'login' }, 200);
+  };
+
+  info = async (req: Request, res: Response): Promise<User | void> => {
+    const userInfo = await this.userService.getUser(req.body.email);
+    if (!userInfo) return this.sendError(res, new Error('Пользователь не найден'), 404);
+    this.sendSuccess(res, { userInfo: userInfo }, 200);
   };
 }

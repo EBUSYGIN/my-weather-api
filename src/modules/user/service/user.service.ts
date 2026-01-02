@@ -65,4 +65,11 @@ export class UserService implements IUserService {
       return 'Ошибка создания пользователя';
     }
   };
+
+  getUser = async (email: string): Promise<Partial<User> | null> => {
+    return this.databaseService.prisma.user.findFirst({
+      where: { email },
+      omit: { password: true },
+    });
+  };
 }
