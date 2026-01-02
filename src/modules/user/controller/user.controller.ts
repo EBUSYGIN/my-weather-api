@@ -50,8 +50,10 @@ export class UserController extends Controller implements IUserController {
     return this.sendSuccess(res, { data: createdUser }, 200);
   };
 
-  login = async (req: Request, res: Response): Promise<void> => {
-    return this.sendSuccess(res, { success: 'login' }, 200);
+  login = async ({ body }: Request<{}, {}, UserLoginDTO>, res: Response): Promise<void> => {
+    const tokens = await this.userService.validateUser(body);
+    if (!tokens) return this.sendError(res, new Error('Неверные данные пользователя'), 401);
+    return this.sendSuccess(res, { tokens }, 200);
   };
 
   info = async (req: Request, res: Response): Promise<User | void> => {

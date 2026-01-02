@@ -1,12 +1,13 @@
 import { inject, injectable } from 'inversify';
 import { DI_TYPES } from '../../../common/config/DI.types';
 import type { ILogService } from '../../../common/log-service/log.service.interface';
-import { IUserService } from './user.service.interface';
+import { IUserService, IUserTokensReturn } from './user.service.interface';
 import type { IDatabaseService } from '../../../common/database-service/database-service.interface';
 import { UserEntity } from '../../../entities/user/user.entity';
 import type { IEnvService } from '../../../common/env-service/env.service.interface';
 import { User } from '../../../../generated/prisma/client';
 import type { IAuthService } from '../../../common/auth/auth.service.interface';
+import { UserLoginDTO } from '../dto/user-login.dto';
 
 @injectable()
 export class UserService implements IUserService {
@@ -64,6 +65,19 @@ export class UserService implements IUserService {
       this.logService.log(`[UserService]: ошибка создания пользователя`);
       return 'Ошибка создания пользователя';
     }
+  };
+
+  validateUser = async ({ email, password }: UserLoginDTO): Promise<IUserTokensReturn | null> => {
+    const existingUser = await this.databaseService.prisma.user.findFirst({ where: { email } });
+    if (!existingUser) return null;
+
+    const user = new UserEntity(existingUser.name, existingUser.email, existingUser.password);
+    const isVerified = await user.verifyUser(password);
+    if (!isVerified) return null;
+
+    const accessToken = this.authService.singAccessToken(existingUser);
+    const refreshToken = this.authService.signRefreshToken(existingUser);
+    return { accessToken, refreshToken };
   };
 
   getUser = async (email: string): Promise<Partial<User> | null> => {
