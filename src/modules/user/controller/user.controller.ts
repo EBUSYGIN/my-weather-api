@@ -11,7 +11,6 @@ import type { IUserService } from '../service/user.service.interface';
 import { User } from '../../../../generated/prisma/client';
 import { AuthMiddleware } from '../../../common/middlewares/auth/auth.middleware';
 import type { IAuthService } from '../../../common/auth/auth.service.interface';
-import { HttpResponses } from '../../../common/types/http-responses.types';
 
 @injectable()
 export class UserController extends Controller implements IUserController {
@@ -46,26 +45,20 @@ export class UserController extends Controller implements IUserController {
   register = async ({ body }: Request<{}, {}, UserRegisterDTO>, res: Response): Promise<void> => {
     const createdUser = await this.userService.create(body.name, body.email, body.password);
     if (typeof createdUser == 'string') {
-      return this.sendError(res, new Error(createdUser), HttpResponses.CONFLICT);
+      return this.sendError(res, new Error(createdUser), 500);
     }
-    return this.sendSuccess(res, { data: createdUser }, HttpResponses.CREATED);
+    return this.sendSuccess(res, { data: createdUser }, 200);
   };
 
   login = async ({ body }: Request<{}, {}, UserLoginDTO>, res: Response): Promise<void> => {
     const tokens = await this.userService.validateUser(body);
-    if (!tokens)
-      return this.sendError(
-        res,
-        new Error('Неверные данные пользователя'),
-        HttpResponses.UNAUTHORIZED,
-      );
-    return this.sendSuccess(res, { tokens }, HttpResponses.OK);
+    if (!tokens) return this.sendError(res, new Error('Неверные данные пользователя'), 401);
+    return this.sendSuccess(res, { tokens }, 200);
   };
 
   info = async (req: Request, res: Response): Promise<User | void> => {
     const userInfo = await this.userService.getUser(req.body.email);
-    if (!userInfo)
-      return this.sendError(res, new Error('Пользователь не найден'), HttpResponses.NOT_FOUND);
-    return this.sendSuccess(res, { userInfo: userInfo }, HttpResponses.OK);
+    if (!userInfo) return this.sendError(res, new Error('Пользователь не найден'), 404);
+    this.sendSuccess(res, { userInfo: userInfo }, 200);
   };
 }
