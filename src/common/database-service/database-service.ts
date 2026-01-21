@@ -3,8 +3,8 @@ import type { ILogService } from '../log-service/log.service.interface';
 import { DI_TYPES } from '../config/DI.types';
 import type { IEnvService } from '../env-service/env.service.interface';
 import { PrismaClient } from '../../../generated/prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
 import { IDatabaseService } from './database-service.interface';
+import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 
 @injectable()
 export class DatabaseService implements IDatabaseService {
@@ -22,7 +22,7 @@ export class DatabaseService implements IDatabaseService {
       throw new Error('Невозможно инициализировать подключение к бд из-за отсутствия DATABASE_URL');
     }
 
-    const adapter = new PrismaPg({ connectionString });
+    const adapter = new PrismaBetterSqlite3({ url: connectionString });
     this.prisma = new PrismaClient({ adapter });
   }
 
