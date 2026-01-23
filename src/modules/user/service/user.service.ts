@@ -1,7 +1,7 @@
 import { inject, injectable } from 'inversify';
 import { DI_TYPES } from '../../../common/config/DI.types';
 import type { ILogService } from '../../../common/log-service/log.service.interface';
-import { IUserService, IUserTokensReturn } from './user.service.interface';
+import { IUserRegister, IUserService, IUserTokensReturn } from './user.service.interface';
 import type { IDatabaseService } from '../../../common/database-service/database-service.interface';
 import { UserEntity } from '../../../entities/user/user.entity';
 import type { IEnvService } from '../../../common/env-service/env.service.interface';
@@ -30,7 +30,7 @@ export class UserService implements IUserService {
     name: string,
     email: string,
     password: string,
-  ): Promise<Partial<User> | string> => {
+  ): Promise<IUserRegister | string> => {
     const existingUser = await this.databaseService.prisma.user.findFirst({
       where: {
         email: email,
@@ -40,7 +40,7 @@ export class UserService implements IUserService {
 
     const user = new UserEntity(name, email);
     await user.setPassword(password, this.salt);
-    const accessToken = this.authService.singAccessToken({ name, email });
+    const accessToken = this.authService.signAccessToken({ name, email });
     const refreshToken = this.authService.signRefreshToken({ email });
     try {
       const createdUser = await this.databaseService.prisma.user.create({
@@ -59,8 +59,7 @@ export class UserService implements IUserService {
       this.logService.log(
         `[UserService]: успешное создание пользователя Имя: ${name} Почта: ${email}`,
       );
-      const userData = { ...createdUser, accessToken, refreshToken };
-      return userData;
+      return { user: createdUser, accessToken, refreshToken };
     } catch {
       this.logService.log(`[UserService]: ошибка создания пользователя`);
       return 'Ошибка создания пользователя';
@@ -75,8 +74,11 @@ export class UserService implements IUserService {
     const isVerified = await user.verifyUser(password);
     if (!isVerified) return null;
 
-    const accessToken = this.authService.singAccessToken(existingUser);
-    const refreshToken = this.authService.signRefreshToken(existingUser);
+    const accessToken = this.authService.signAccessToken({
+      email: existingUser.email,
+      name: existingUser.name,
+    });
+    const refreshToken = this.authService.signRefreshToken({ email: existingUser.email });
     return { accessToken, refreshToken };
   };
 
@@ -85,5 +87,48 @@ export class UserService implements IUserService {
       where: { email },
       omit: { password: true },
     });
+  };
+
+  updateTokens = async (token: string): Promise<IUserTokensReturn | null> => {
+    try {
+      const payload = this.authService.verifyRefreshToken(token);
+      const result = await this.databaseService.prisma.refreshToken.findFirst({
+        where: {
+          user: {
+            email: payload.email,
+          },
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              name: true,
+            },
+          },
+        },
+      });
+
+      if (!result || result.isRevoked) return null;
+
+      const accessToken = this.authService.signAccessToken({
+        email: result.user.email,
+        name: result.user.name,
+      });
+      const refreshToken = this.authService.signRefreshToken({ email: result.user.email });
+
+      await this.databaseService.prisma.refreshToken.update({
+        where: {
+          id: result.id,
+        },
+        data: {
+          token: refreshToken,
+        },
+      });
+
+      return { accessToken, refreshToken };
+    } catch {
+      return null;
+    }
   };
 }

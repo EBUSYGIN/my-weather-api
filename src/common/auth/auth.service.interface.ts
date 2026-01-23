@@ -1,8 +1,17 @@
-import { User } from '../../../generated/prisma/client';
+import { JwtPayload } from 'jsonwebtoken';
 
 export interface IAuthService {
-  singAccessToken: (payload: Pick<User, 'email' | 'name'>) => string;
+  signAccessToken: (payload: IAccessTokenPayload) => string;
   verifyAccessToken: (accessToken: string) => boolean;
-  signRefreshToken: (payload: Pick<User, 'email'>) => string;
-  verifyRefreshToken: (refreshToken: string) => boolean;
+  signRefreshToken: (payload: IRefreshTokenPayload) => string;
+  verifyRefreshToken: (refreshToken: string) => JwtPayload;
+}
+
+export interface IAccessTokenPayload {
+  email: string;
+  name: string;
+}
+
+export interface IRefreshTokenPayload {
+  email: string;
 }

@@ -8,7 +8,6 @@ import { UserRegisterDTO } from '../dto/user.register.dto';
 import { UserMiddleware } from '../../../common/middlewares/user/user.middleware';
 import { UserLoginDTO } from '../dto/user-login.dto';
 import type { IUserService } from '../service/user.service.interface';
-import { User } from '../../../../generated/prisma/client';
 import { AuthMiddleware } from '../../../common/middlewares/auth/auth.middleware';
 import type { IAuthService } from '../../../common/auth/auth.service.interface';
 import { HttpResponses } from '../../../common/types/http-responses.types';
@@ -40,6 +39,11 @@ export class UserController extends Controller implements IUserController {
         function: this.info,
         middleware: [new AuthMiddleware(this.authService)],
       },
+      {
+        method: 'post',
+        path: '/refresh',
+        function: this.refresh,
+      },
     ]);
   }
 
@@ -48,7 +52,17 @@ export class UserController extends Controller implements IUserController {
     if (typeof createdUser == 'string') {
       return this.sendError(res, new Error(createdUser), HttpResponses.CONFLICT);
     }
-    return this.sendSuccess(res, { data: createdUser }, HttpResponses.CREATED);
+    const { refreshToken, ...data } = createdUser;
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: '/users/refresh',
+    });
+
+    return this.sendSuccess(res, data, HttpResponses.CREATED);
   };
 
   login = async ({ body }: Request<{}, {}, UserLoginDTO>, res: Response): Promise<void> => {
@@ -59,13 +73,41 @@ export class UserController extends Controller implements IUserController {
         new Error('Неверные данные пользователя'),
         HttpResponses.UNAUTHORIZED,
       );
-    return this.sendSuccess(res, { tokens }, HttpResponses.OK);
+    res.cookie('refreshToken', tokens.refreshToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: '/users/refresh',
+    });
+    return this.sendSuccess(res, { accessToken: tokens.accessToken }, HttpResponses.OK);
   };
 
-  info = async (req: Request, res: Response): Promise<User | void> => {
+  info = async (req: Request, res: Response): Promise<void> => {
     const userInfo = await this.userService.getUser(req.body.email);
     if (!userInfo)
       return this.sendError(res, new Error('Пользователь не найден'), HttpResponses.NOT_FOUND);
     return this.sendSuccess(res, { userInfo: userInfo }, HttpResponses.OK);
+  };
+
+  refresh = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const refreshToken = req.cookies.refreshToken;
+      if (!refreshToken)
+        return this.sendError(res, new Error('Невалидный токен'), HttpResponses.UNAUTHORIZED);
+      const tokens = await this.userService.updateTokens(refreshToken);
+      if (!tokens)
+        return this.sendError(res, new Error('Невалидный токен'), HttpResponses.UNAUTHORIZED);
+      res.cookie('refreshToken', tokens.refreshToken, {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        path: '/users/refresh',
+      });
+      return this.sendSuccess(res, { accessToken: tokens.accessToken }, HttpResponses.CREATED);
+    } catch {
+      return this.sendError(res, new Error('Невалидный токен'), HttpResponses.UNAUTHORIZED);
+    }
   };
 }

@@ -6,6 +6,7 @@ import type { IEnvService } from './common/env-service/env.service.interface';
 import type { IDatabaseService } from './common/database-service/database-service.interface';
 import { Server } from 'http';
 import { UserController } from './modules/user/controller/user.controller';
+import cookieParser from 'cookie-parser';
 
 export class App {
   private port: number;
@@ -22,8 +23,9 @@ export class App {
     this.app = express();
   }
 
-  useJsonParser = (): void => {
+  useParsers = (): void => {
     this.app.use(express.json());
+    this.app.use(cookieParser());
   };
 
   useRoutes = (): void => {
@@ -33,7 +35,7 @@ export class App {
   init = async (): Promise<void> => {
     await this.databaseService.connect();
 
-    this.useJsonParser();
+    this.useParsers();
     this.useRoutes();
 
     this.logService.log(`Сервер запущен на порту ${this.port}`);
