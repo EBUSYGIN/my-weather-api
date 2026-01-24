@@ -22,6 +22,7 @@ export abstract class Controller implements IController {
 
   sendError = async (res: Response, error: Error, code: number): Promise<void> => {
     res.status(code).json({ error: error.message });
+    this.logService.error(`[Controller] : ${error.message}`);
     return;
   };
 

@@ -1,10 +1,9 @@
 import { inject, injectable } from 'inversify';
-import { User } from '../../../generated/prisma/client';
-import { IAuthService } from './auth.service.interface';
+import { IAccessTokenPayload, IAuthService, IRefreshTokenPayload } from './auth.service.interface';
 import { DI_TYPES } from '../config/DI.types';
 import type { IEnvService } from '../env-service/env.service.interface';
 import type { ILogService } from '../log-service/log.service.interface';
-import jwt from 'jsonwebtoken';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 
 @injectable()
 export class AuthService implements IAuthService {
@@ -26,7 +25,7 @@ export class AuthService implements IAuthService {
     }
   }
 
-  singAccessToken = (payload: Pick<User, 'email' | 'name'>): string => {
+  signAccessToken = (payload: IAccessTokenPayload): string => {
     const accessToken = jwt.sign(payload, this.accessSecret, {
       expiresIn: '15m',
       algorithm: 'HS512',
@@ -39,20 +38,21 @@ export class AuthService implements IAuthService {
       jwt.verify(accessToken, this.accessSecret, { algorithms: ['HS512'] });
       return true;
     } catch {
+      this.logService.error('[AuthService] : Ошибка проверки access token');
       return false;
     }
   };
 
-  signRefreshToken = (payload: Pick<User, 'email'>): string => {
+  signRefreshToken = (payload: IRefreshTokenPayload): string => {
     return jwt.sign(payload, this.refreshSecret, { expiresIn: '7d', algorithm: 'HS384' });
   };
 
-  verifyRefreshToken = (refreshToken: string): boolean => {
+  verifyRefreshToken = (refreshToken: string): JwtPayload => {
     try {
-      jwt.verify(refreshToken, this.refreshSecret, { algorithms: ['HS384'] });
-      return true;
-    } catch {
-      return false;
+      return jwt.verify(refreshToken, this.refreshSecret, { algorithms: ['HS384'] }) as JwtPayload;
+    } catch (e) {
+      this.logService.error('[AuthService] : Ошибка проверки refresh token');
+      throw e;
     }
   };
 }
