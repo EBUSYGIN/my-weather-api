@@ -55,7 +55,6 @@ export class UserController extends Controller implements IUserController {
 
     const { refreshToken, accessToken, ...data } = createdUser;
 
-
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: false,
@@ -64,15 +63,13 @@ export class UserController extends Controller implements IUserController {
       path: '/users/refresh',
     });
 
-
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
       secure: false,
       sameSite: 'strict',
       maxAge: 15 * 60 * 1000,
       path: '/',
-    })
-
+    });
 
     return this.sendSuccess(res, data, HttpResponses.CREATED);
   };
@@ -93,17 +90,15 @@ export class UserController extends Controller implements IUserController {
       path: '/users/refresh',
     });
 
-     res.cookie('accessToken', tokens.accessToken, {
+    res.cookie('accessToken', tokens.accessToken, {
       httpOnly: true,
       secure: false,
       sameSite: 'strict',
       maxAge: 15 * 60 * 1000,
       path: '/',
-    })
+    });
 
-    return this.sendSuccess(res, {success: true}, HttpResponses.OK);
-
-
+    return this.sendSuccess(res, { success: true }, HttpResponses.OK);
   };
 
   info = async (req: Request, res: Response): Promise<void> => {
@@ -128,7 +123,14 @@ export class UserController extends Controller implements IUserController {
         maxAge: 7 * 24 * 60 * 60 * 1000,
         path: '/users/refresh',
       });
-      return this.sendSuccess(res, { accessToken: tokens.accessToken }, HttpResponses.CREATED);
+      res.cookie('accessToken', tokens.accessToken, {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'strict',
+        maxAge: 15 * 60 * 1000,
+        path: '/',
+      });
+      return this.sendSuccess(res, { success: true }, HttpResponses.CREATED);
     } catch {
       return this.sendError(res, new Error('Невалидный токен'), HttpResponses.UNAUTHORIZED);
     }
