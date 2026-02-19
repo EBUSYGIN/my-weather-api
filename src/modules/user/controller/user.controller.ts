@@ -52,7 +52,9 @@ export class UserController extends Controller implements IUserController {
     if (typeof createdUser == 'string') {
       return this.sendError(res, new Error(createdUser), HttpResponses.CONFLICT);
     }
-    const { refreshToken, ...data } = createdUser;
+
+    const { refreshToken, accessToken, ...data } = createdUser;
+
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
@@ -61,6 +63,16 @@ export class UserController extends Controller implements IUserController {
       maxAge: 7 * 24 * 60 * 60 * 1000,
       path: '/users/refresh',
     });
+
+
+    res.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'strict',
+      maxAge: 15 * 60 * 1000,
+      path: '/',
+    })
+
 
     return this.sendSuccess(res, data, HttpResponses.CREATED);
   };
@@ -80,7 +92,18 @@ export class UserController extends Controller implements IUserController {
       maxAge: 7 * 24 * 60 * 60 * 1000,
       path: '/users/refresh',
     });
-    return this.sendSuccess(res, { accessToken: tokens.accessToken }, HttpResponses.OK);
+
+     res.cookie('accessToken', tokens.accessToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'strict',
+      maxAge: 15 * 60 * 1000,
+      path: '/',
+    })
+
+    return this.sendSuccess(res, {success: true}, HttpResponses.OK);
+
+
   };
 
   info = async (req: Request, res: Response): Promise<void> => {
