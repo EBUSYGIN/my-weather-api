@@ -27,7 +27,7 @@ export class AuthService implements IAuthService {
 
   signAccessToken = (payload: IAccessTokenPayload): string => {
     const accessToken = jwt.sign(payload, this.accessSecret, {
-      expiresIn: '15m',
+      expiresIn: '5m',
       algorithm: 'HS512',
     });
     return accessToken;
