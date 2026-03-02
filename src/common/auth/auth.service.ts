@@ -33,13 +33,12 @@ export class AuthService implements IAuthService {
     return accessToken;
   };
 
-  verifyAccessToken = (accessToken: string): boolean => {
+  verifyAccessToken = (accessToken: string): JwtPayload => {
     try {
-      jwt.verify(accessToken, this.accessSecret, { algorithms: ['HS512'] });
-      return true;
-    } catch {
+      return jwt.verify(accessToken, this.accessSecret, { algorithms: ['HS512'] }) as JwtPayload;
+    } catch (e) {
       this.logService.error('[AuthService] : Ошибка проверки access token');
-      return false;
+      throw e;
     }
   };
 

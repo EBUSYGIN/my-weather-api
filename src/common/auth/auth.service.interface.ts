@@ -2,7 +2,7 @@ import { JwtPayload } from 'jsonwebtoken';
 
 export interface IAuthService {
   signAccessToken: (payload: IAccessTokenPayload) => string;
-  verifyAccessToken: (accessToken: string) => boolean;
+  verifyAccessToken: (accessToken: string) => JwtPayload;
   signRefreshToken: (payload: IRefreshTokenPayload) => string;
   verifyRefreshToken: (refreshToken: string) => JwtPayload;
 }
