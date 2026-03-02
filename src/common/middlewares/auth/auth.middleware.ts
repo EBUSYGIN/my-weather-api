@@ -1,13 +1,12 @@
-import { IRequest } from '../../../../types/custom';
 import type { IAuthService } from '../../auth/auth.service.interface';
 import { HttpResponses } from '../../types/http-responses.types';
 import { IMiddleware } from '../middleware.interface';
-import { Response, NextFunction } from 'express';
+import { Response, NextFunction, Request } from 'express';
 
 export class AuthMiddleware implements IMiddleware {
   constructor(private authService: IAuthService) {}
 
-  execute = (req: IRequest, res: Response, next: NextFunction): void => {
+  execute = (req: Request, res: Response, next: NextFunction): void => {
     try {
       if (!req.headers.authorization) {
         res.status(HttpResponses.FORBIDDEN).json({ error: 'Пользователь не авторизован' });

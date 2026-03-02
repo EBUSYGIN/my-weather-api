@@ -11,7 +11,6 @@ import type { IUserService } from '../service/user.service.interface';
 import { AuthMiddleware } from '../../../common/middlewares/auth/auth.middleware';
 import type { IAuthService } from '../../../common/auth/auth.service.interface';
 import { HttpResponses } from '../../../common/types/http-responses.types';
-import { IRequest } from '../../../../types/custom';
 
 @injectable()
 export class UserController extends Controller implements IUserController {
@@ -75,7 +74,7 @@ export class UserController extends Controller implements IUserController {
     );
   };
 
-  info = async (req: IRequest, res: Response): Promise<void> => {
+  info = async (req: Request, res: Response): Promise<void> => {
     if (!req.user?.email) {
       return this.sendError(res, new Error('Пользователь не найден'), HttpResponses.NOT_FOUND);
     }
