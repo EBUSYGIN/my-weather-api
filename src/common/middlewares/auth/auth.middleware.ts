@@ -8,22 +8,19 @@ export class AuthMiddleware implements IMiddleware {
 
   execute = (req: Request, res: Response, next: NextFunction): void => {
     try {
-      if (!req.headers.authorization) {
+      const accessToken = req.cookies?.accessToken;
+
+      if (!accessToken) {
         res.status(HttpResponses.FORBIDDEN).json({ error: 'Пользователь не авторизован' });
         return;
       }
 
-      const token = req.headers.authorization.split(' ')[1];
-      if (!token) {
-        res.status(HttpResponses.FORBIDDEN).json({ error: 'Пользователь не авторизован' });
-        return;
-      }
-
-      const payload = this.authService.verifyAccessToken(token);
+      const payload = this.authService.verifyAccessToken(accessToken);
       if (!payload) {
         res.status(HttpResponses.FORBIDDEN).json({ error: 'Пользователь не авторизован' });
         return;
       }
+
       req.user = { email: payload.email, name: payload.name };
       next();
     } catch (e) {
