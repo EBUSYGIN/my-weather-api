@@ -25,8 +25,6 @@ export class App {
   }
 
   useParsers = (): void => {
-    this.app.use(express.json());
-    this.app.use(cookieParser());
     this.app.use(
       cors({
         origin: 'http://localhost:3000',
@@ -35,6 +33,8 @@ export class App {
         allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
       }),
     );
+    this.app.use(express.json());
+    this.app.use(cookieParser());
   };
 
   useRoutes = (): void => {

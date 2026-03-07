@@ -89,12 +89,23 @@ export class UserController extends Controller implements IUserController {
 
   refresh = async (req: Request, res: Response): Promise<void> => {
     try {
-      const refreshToken = req.cookies.refreshToken;
-      if (!refreshToken)
-        return this.sendError(res, new Error('Невалидный токен'), HttpResponses.UNAUTHORIZED);
+      if (!req.headers.authorization) {
+        res.status(HttpResponses.FORBIDDEN).json({ error: 'Пользователь не авторизован' });
+        return;
+      }
+
+      const refreshToken = req.headers.authorization.split(' ')[1];
+      if (!refreshToken) {
+        res.status(HttpResponses.FORBIDDEN).json({ error: 'Пользователь не авторизован' });
+        return;
+      }
+
       const tokens = await this.userService.updateTokens(refreshToken);
-      if (!tokens)
-        return this.sendError(res, new Error('Невалидный токен'), HttpResponses.UNAUTHORIZED);
+      if (!tokens) {
+        res.status(HttpResponses.FORBIDDEN).json({ error: 'Пользователь не авторизован' });
+        return;
+      }
+
       return this.sendSuccess(
         res,
         { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken },
