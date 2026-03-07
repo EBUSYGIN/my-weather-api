@@ -7,6 +7,7 @@ import type { IDatabaseService } from './common/database-service/database-servic
 import { Server } from 'http';
 import { UserController } from './modules/user/controller/user.controller';
 import cookieParser from 'cookie-parser';
+import cors from 'cors';
 
 export class App {
   private port: number;
@@ -26,6 +27,14 @@ export class App {
   useParsers = (): void => {
     this.app.use(express.json());
     this.app.use(cookieParser());
+    this.app.use(
+      cors({
+        origin: 'http://localhost:3000',
+        credentials: true,
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+      }),
+    );
   };
 
   useRoutes = (): void => {
