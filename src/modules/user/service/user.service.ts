@@ -86,6 +86,7 @@ export class UserService implements IUserService {
     return this.databaseService.prisma.user.findFirst({
       where: { email },
       omit: { password: true },
+      include: { favoriteCities: true },
     });
   };
 
