@@ -26,6 +26,7 @@ export class AuthMiddleware implements IMiddleware {
       }
 
       req.user = { email: payload.email, name: payload.name };
+
       next();
     } catch {
       res.status(HttpResponses.FORBIDDEN).json({ error: 'Пользователь не авторизован' });

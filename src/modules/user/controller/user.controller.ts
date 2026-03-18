@@ -44,6 +44,12 @@ export class UserController extends Controller implements IUserController {
         path: '/refresh',
         function: this.refresh,
       },
+      {
+        method: 'post',
+        path: '/add-favoriteCity',
+        function: this.addFavoriteCity,
+        middleware: [new AuthMiddleware(this.authService)],
+      },
     ]);
   }
 
@@ -113,6 +119,39 @@ export class UserController extends Controller implements IUserController {
       );
     } catch {
       return this.sendError(res, new Error('Невалидный токен'), HttpResponses.UNAUTHORIZED);
+    }
+  };
+
+  addFavoriteCity = async (req: Request, res: Response): Promise<void> => {
+    console.log(req.favoriteCities);
+    if (!req.body.favoriteCities) {
+      this.logService.error(`[UserController]: Нет городов для обновления`);
+      return this.sendError(
+        res,
+        new Error('Города не предоставлены'),
+        HttpResponses.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    if (!req.user?.email) {
+      this.logService.error(`[UserController]: Нет email пользователя`);
+      return this.sendError(res, new Error('Пользователь не найден'), HttpResponses.NOT_FOUND);
+    }
+
+    try {
+      const result = await this.userService.addFavoriteCities(
+        req?.user?.email,
+        req.body.favoriteCities,
+      );
+      if (result) {
+        return this.sendSuccess(
+          res,
+          { message: 'Успешное обновление города' },
+          HttpResponses.CREATED,
+        );
+      }
+    } catch {
+      return this.sendError(res, new Error('Ошибка обновления города'), HttpResponses.BAD_Request);
     }
   };
 }
