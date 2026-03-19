@@ -11,6 +11,7 @@ import type { IUserService } from '../service/user.service.interface';
 import { AuthMiddleware } from '../../../common/middlewares/auth/auth.middleware';
 import type { IAuthService } from '../../../common/auth/auth.service.interface';
 import { HttpResponses } from '../../../common/types/http-responses.types';
+import { UserFavoriteCityDTO } from '../dto/user-favorite-city.dto';
 
 @injectable()
 export class UserController extends Controller implements IUserController {
@@ -46,9 +47,9 @@ export class UserController extends Controller implements IUserController {
       },
       {
         method: 'post',
-        path: '/add-favoriteCity',
-        function: this.addFavoriteCity,
-        middleware: [new AuthMiddleware(this.authService)],
+        path: '/update-favorite-cities',
+        function: this.updateFavoriteCities,
+        middleware: [new AuthMiddleware(this.authService), new UserMiddleware(UserFavoriteCityDTO)],
       },
     ]);
   }
@@ -122,13 +123,12 @@ export class UserController extends Controller implements IUserController {
     }
   };
 
-  addFavoriteCity = async (req: Request, res: Response): Promise<void> => {
-    console.log(req.favoriteCities);
-    if (!req.body.favoriteCities) {
+  updateFavoriteCities = async (req: Request, res: Response): Promise<void> => {
+    if (!req.body.favoriteCity) {
       this.logService.error(`[UserController]: Нет городов для обновления`);
       return this.sendError(
         res,
-        new Error('Города не предоставлены'),
+        new Error('Город не предоставлен'),
         HttpResponses.UNPROCESSABLE_ENTITY,
       );
     }
@@ -139,19 +139,19 @@ export class UserController extends Controller implements IUserController {
     }
 
     try {
-      const result = await this.userService.addFavoriteCities(
+      const result = await this.userService.updateFavoriteCities(
         req?.user?.email,
-        req.body.favoriteCities,
+        req.body.favoriteCity,
       );
       if (result) {
         return this.sendSuccess(
           res,
-          { message: 'Успешное обновление города' },
+          { message: 'Успешное обновление городов' },
           HttpResponses.CREATED,
         );
       }
     } catch {
-      return this.sendError(res, new Error('Ошибка обновления города'), HttpResponses.BAD_Request);
+      return this.sendError(res, new Error('Ошибка обновления городов'), HttpResponses.BAD_Request);
     }
   };
 }

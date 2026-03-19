@@ -133,36 +133,60 @@ export class UserService implements IUserService {
     }
   };
 
-  addFavoriteCities = async (email: string, favoriteCities: string[]): Promise<boolean> => {
+  updateFavoriteCities = async (email: string, favoriteCity: string): Promise<boolean> => {
     try {
       const user = await this.databaseService.prisma.user.findFirst({
         where: { email },
         include: { favoriteCities: true },
       });
       if (!user) {
-        this.logService.error(`[UserService: ошибка в поиске пользователя с email: ${email}]`);
+        this.logService.error(`[UserService]: ошибка при поиске пользователя с email: ${email}`);
         throw new Error('Ошибка в поиске пользователя');
       }
 
-      const citiesToCreate = favoriteCities.map((cityName) => ({
-        userId: user.id,
-        cityName: cityName,
-      }));
-
-      await this.databaseService.prisma.favoriteCity.createMany({
-        data: citiesToCreate,
-        // skipDuplicates: true
+      const existing = await this.databaseService.prisma.favoriteCity.findUnique({
+        where: {
+          userId_cityName: {
+            userId: user.id,
+            cityName: favoriteCity,
+          },
+        },
       });
-      this.logService.log(`[UserService]: успешное обновление городов для пользователя: ${email}`);
+
+      if (existing) {
+        await this.databaseService.prisma.favoriteCity.delete({
+          where: {
+            userId_cityName: {
+              userId: user.id,
+              cityName: favoriteCity,
+            },
+          },
+        });
+        this.logService.log(
+          `[UserService]: успешное удаление города [${favoriteCity}] для пользователя: ${email}`,
+        );
+      } else {
+        await this.databaseService.prisma.favoriteCity.create({
+          data: {
+            userId: user.id,
+            cityName: favoriteCity,
+          },
+        });
+        this.logService.log(
+          `[UserService]: успешное добавление города [${favoriteCity}] для пользователя: ${email}`,
+        );
+      }
+
       return true;
     } catch (e) {
       this.logService.error(
-        `[UserService: ошибка при обновление города для пользователя с email: ${email}]`,
+        `[UserService]: ошибка при обновление списка города для пользователя с email: ${email}`,
+        e,
       );
       if (e instanceof Error) {
         throw e;
       }
-      throw new Error('Ошибка при обновление города');
+      throw new Error('Ошибка при обновление городов');
     }
   };
 }
