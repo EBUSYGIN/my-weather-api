@@ -25,7 +25,7 @@ export class AuthMiddleware implements IMiddleware {
         return;
       }
 
-      req.user = { email: payload.email, name: payload.name };
+      req.user = { email: payload.email, name: payload.name, id: payload.id };
 
       next();
     } catch {

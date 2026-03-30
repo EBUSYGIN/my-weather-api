@@ -8,6 +8,8 @@ import type { IEnvService } from '../../../common/env-service/env.service.interf
 import { User } from '../../../../generated/prisma/client';
 import type { IAuthService } from '../../../common/auth/auth.service.interface';
 import { UserLoginDTO } from '../dto/user-login.dto';
+import { UserModel } from '../../../../generated/prisma/models';
+import { UserUpdateDTO } from '../dto/user-update.dto';
 
 @injectable()
 export class UserService implements IUserService {
@@ -40,22 +42,26 @@ export class UserService implements IUserService {
 
     const user = new UserEntity(name, email);
     await user.setPassword(password, this.salt);
-    const accessToken = this.authService.signAccessToken({ name, email });
-    const refreshToken = this.authService.signRefreshToken({ email });
+
     try {
       const createdUser = await this.databaseService.prisma.user.create({
         data: {
           name: user.name,
           email: user.email,
           password: user.password,
-          refreshTokens: {
-            create: [{ token: refreshToken }],
-          },
         },
         omit: {
           password: true,
         },
       });
+
+      const accessToken = this.authService.signAccessToken({ name, email, id: createdUser.id });
+      const refreshToken = this.authService.signRefreshToken({ email, id: createdUser.id });
+
+      await this.databaseService.prisma.refreshToken.create({
+        data: { token: refreshToken, userId: createdUser.id },
+      });
+
       this.logService.log(
         `[UserService]: успешное создание пользователя Имя: ${name} Почта: ${email}`,
       );
@@ -77,8 +83,12 @@ export class UserService implements IUserService {
     const accessToken = this.authService.signAccessToken({
       email: existingUser.email,
       name: existingUser.name,
+      id: existingUser.id,
     });
-    const refreshToken = this.authService.signRefreshToken({ email: existingUser.email });
+    const refreshToken = this.authService.signRefreshToken({
+      email: existingUser.email,
+      id: existingUser.id,
+    });
     return { accessToken, refreshToken };
   };
 
@@ -96,7 +106,7 @@ export class UserService implements IUserService {
       const result = await this.databaseService.prisma.refreshToken.findFirst({
         where: {
           user: {
-            email: payload.email,
+            id: payload.id,
           },
         },
         include: {
@@ -115,8 +125,12 @@ export class UserService implements IUserService {
       const accessToken = this.authService.signAccessToken({
         email: result.user.email,
         name: result.user.name,
+        id: result.user.id,
       });
-      const refreshToken = this.authService.signRefreshToken({ email: result.user.email });
+      const refreshToken = this.authService.signRefreshToken({
+        email: result.user.email,
+        id: result.user.id,
+      });
 
       await this.databaseService.prisma.refreshToken.update({
         where: {
@@ -133,14 +147,14 @@ export class UserService implements IUserService {
     }
   };
 
-  updateFavoriteCities = async (email: string, favoriteCity: string): Promise<boolean> => {
+  updateFavoriteCities = async (id: string, favoriteCity: string): Promise<boolean> => {
     try {
       const user = await this.databaseService.prisma.user.findFirst({
-        where: { email },
+        where: { id },
         include: { favoriteCities: true },
       });
       if (!user) {
-        this.logService.error(`[UserService]: ошибка при поиске пользователя с email: ${email}`);
+        this.logService.error(`[UserService]: ошибка при поиске пользователя с email: ${id}`);
         throw new Error('Ошибка в поиске пользователя');
       }
 
@@ -163,7 +177,7 @@ export class UserService implements IUserService {
           },
         });
         this.logService.log(
-          `[UserService]: успешное удаление города [${favoriteCity}] для пользователя: ${email}`,
+          `[UserService]: успешное удаление города [${favoriteCity}] для пользователя: ${id}`,
         );
       } else {
         await this.databaseService.prisma.favoriteCity.create({
@@ -173,20 +187,53 @@ export class UserService implements IUserService {
           },
         });
         this.logService.log(
-          `[UserService]: успешное добавление города [${favoriteCity}] для пользователя: ${email}`,
+          `[UserService]: успешное добавление города [${favoriteCity}] для пользователя: ${id}`,
         );
       }
 
       return true;
     } catch (e) {
       this.logService.error(
-        `[UserService]: ошибка при обновление списка города для пользователя с email: ${email}`,
+        `[UserService]: ошибка при обновление списка города для пользователя с email: ${id}`,
         e,
       );
       if (e instanceof Error) {
         throw e;
       }
       throw new Error('Ошибка при обновление городов');
+    }
+  };
+
+  updateUserInfo = async (id: string, body: UserUpdateDTO): Promise<Partial<UserModel>> => {
+    try {
+      const existingUser = await this.databaseService.prisma.user.findFirst({ where: { id } });
+      if (!existingUser) {
+        this.logService.error(`[UserService]: ошибка при поиске пользователя с email: ${id}`);
+        throw new Error('Пользователь не найдет');
+      }
+
+      if (existingUser.email == body.newEmail) {
+        throw new Error('Email совпадает');
+      }
+
+      const updatedUser = await this.databaseService.prisma.user.update({
+        where: { id },
+        data: {
+          ...(body.newEmail !== undefined && { email: body.newEmail }),
+          ...(body.name !== undefined && { name: body.name }),
+          ...(body.photoId !== undefined && { photoId: body.photoId }),
+        },
+        include: { favoriteCities: true },
+        omit: { password: true },
+      });
+
+      return updatedUser;
+    } catch (e) {
+      this.logService.error(`[UserService]: ошибка при пользователя с email: ${id}`);
+      if (e instanceof Error) {
+        throw e;
+      }
+      throw new Error('Ошибка при обновление пользователя');
     }
   };
 }

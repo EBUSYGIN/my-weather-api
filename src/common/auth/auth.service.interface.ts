@@ -10,8 +10,10 @@ export interface IAuthService {
 export interface IAccessTokenPayload {
   email: string;
   name: string;
+  id: string;
 }
 
 export interface IRefreshTokenPayload {
   email: string;
+  id: string;
 }

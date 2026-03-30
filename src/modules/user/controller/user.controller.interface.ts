@@ -6,4 +6,5 @@ export interface IUserController {
   info: (req: Request, res: Response) => Promise<void>;
   refresh: (req: Request, res: Response) => Promise<void>;
   updateFavoriteCities: (req: Request, res: Response) => Promise<void>;
+  updateUserInfo: (req: Request, res: Response) => Promise<void>;
 }
