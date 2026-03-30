@@ -5,6 +5,7 @@ declare global {
         name: string;
         email: string;
       };
+      favoriteCity: string;
     }
   }
 }

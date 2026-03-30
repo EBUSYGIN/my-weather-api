@@ -6,6 +6,7 @@ export interface IUserService {
   getUser: (email: string) => Promise<Partial<User> | null>;
   validateUser: (body: UserLoginDTO) => Promise<IUserTokensReturn | null>;
   updateTokens: (token: string) => Promise<IUserTokensReturn | null>;
+  updateFavoriteCities: (email: string, favoriteCity: string) => Promise<boolean>;
 }
 
 export interface IUserTokensReturn {

@@ -25,15 +25,12 @@ model FavoriteCity {
   id String @id @default(cuid())
   userId String
   cityName String
-  country String?
-  latitude Float
-  longitude Float
   orderIndex Int @default(0)
   createdAt DateTime @default(now())
 
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, cityName, country])
+  @@unique([userId, cityName])
 }
 
 model RefreshToken {

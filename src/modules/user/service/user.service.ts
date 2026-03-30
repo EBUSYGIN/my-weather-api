@@ -132,4 +132,61 @@ export class UserService implements IUserService {
       return null;
     }
   };
+
+  updateFavoriteCities = async (email: string, favoriteCity: string): Promise<boolean> => {
+    try {
+      const user = await this.databaseService.prisma.user.findFirst({
+        where: { email },
+        include: { favoriteCities: true },
+      });
+      if (!user) {
+        this.logService.error(`[UserService]: ошибка при поиске пользователя с email: ${email}`);
+        throw new Error('Ошибка в поиске пользователя');
+      }
+
+      const existing = await this.databaseService.prisma.favoriteCity.findUnique({
+        where: {
+          userId_cityName: {
+            userId: user.id,
+            cityName: favoriteCity,
+          },
+        },
+      });
+
+      if (existing) {
+        await this.databaseService.prisma.favoriteCity.delete({
+          where: {
+            userId_cityName: {
+              userId: user.id,
+              cityName: favoriteCity,
+            },
+          },
+        });
+        this.logService.log(
+          `[UserService]: успешное удаление города [${favoriteCity}] для пользователя: ${email}`,
+        );
+      } else {
+        await this.databaseService.prisma.favoriteCity.create({
+          data: {
+            userId: user.id,
+            cityName: favoriteCity,
+          },
+        });
+        this.logService.log(
+          `[UserService]: успешное добавление города [${favoriteCity}] для пользователя: ${email}`,
+        );
+      }
+
+      return true;
+    } catch (e) {
+      this.logService.error(
+        `[UserService]: ошибка при обновление списка города для пользователя с email: ${email}`,
+        e,
+      );
+      if (e instanceof Error) {
+        throw e;
+      }
+      throw new Error('Ошибка при обновление городов');
+    }
+  };
 }
