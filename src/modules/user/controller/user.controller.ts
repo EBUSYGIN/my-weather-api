@@ -12,6 +12,7 @@ import { AuthMiddleware } from '../../../common/middlewares/auth/auth.middleware
 import type { IAuthService } from '../../../common/auth/auth.service.interface';
 import { HttpResponses } from '../../../common/types/http-responses.types';
 import { UserFavoriteCityDTO } from '../dto/user-favorite-city.dto';
+import { UserUpdateDTO } from '../dto/user-update.dto';
 
 @injectable()
 export class UserController extends Controller implements IUserController {
@@ -50,6 +51,12 @@ export class UserController extends Controller implements IUserController {
         path: '/update-favorite-cities',
         function: this.updateFavoriteCities,
         middleware: [new AuthMiddleware(this.authService), new UserMiddleware(UserFavoriteCityDTO)],
+      },
+      {
+        method: 'patch',
+        path: '/update-user-info',
+        function: this.updateUserInfo,
+        middleware: [new AuthMiddleware(this.authService), new UserMiddleware(UserUpdateDTO)],
       },
     ]);
   }
@@ -133,14 +140,14 @@ export class UserController extends Controller implements IUserController {
       );
     }
 
-    if (!req.user?.email) {
-      this.logService.error(`[UserController]: Нет email пользователя`);
+    if (!req.user?.id) {
+      this.logService.error(`[UserController]: Нет id пользователя`);
       return this.sendError(res, new Error('Пользователь не найден'), HttpResponses.NOT_FOUND);
     }
 
     try {
       const result = await this.userService.updateFavoriteCities(
-        req?.user?.email,
+        req?.user?.id,
         req.body.favoriteCity,
       );
       if (result) {
@@ -152,6 +159,27 @@ export class UserController extends Controller implements IUserController {
       }
     } catch {
       return this.sendError(res, new Error('Ошибка обновления городов'), HttpResponses.BAD_Request);
+    }
+  };
+
+  updateUserInfo = async (req: Request<{}, {}, UserUpdateDTO>, res: Response): Promise<void> => {
+    if (!req.user?.id) {
+      this.logService.error(`[UserController]: Нет id пользователя`);
+      return this.sendError(res, new Error('Пользователь не найден'), HttpResponses.NOT_FOUND);
+    }
+
+    try {
+      const result = await this.userService.updateUserInfo(req.user?.id, req.body);
+      return this.sendSuccess(res, result, HttpResponses.OK);
+    } catch (e) {
+      if (e instanceof Error) {
+        return this.sendError(res, e, HttpResponses.BAD_Request);
+      }
+      return this.sendError(
+        res,
+        new Error('Ошибка в обновление данных пользователя'),
+        HttpResponses.BAD_Request,
+      );
     }
   };
 }
