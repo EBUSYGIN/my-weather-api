@@ -147,7 +147,7 @@ export class UserService implements IUserService {
     }
   };
 
-  updateFavoriteCities = async (id: string, favoriteCity: string): Promise<boolean> => {
+  updateFavoriteCities = async (id: string, favoriteCity: string): Promise<UserModel | null> => {
     try {
       const user = await this.databaseService.prisma.user.findFirst({
         where: { id },
@@ -191,7 +191,12 @@ export class UserService implements IUserService {
         );
       }
 
-      return true;
+      const updatedUser = this.databaseService.prisma.user.findUnique({
+        where: { id },
+        include: { favoriteCities: true },
+      });
+
+      return updatedUser;
     } catch (e) {
       this.logService.error(
         `[UserService]: ошибка при обновление списка города для пользователя с email: ${id}`,

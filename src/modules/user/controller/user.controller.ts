@@ -150,13 +150,10 @@ export class UserController extends Controller implements IUserController {
         req?.user?.id,
         req.body.favoriteCity,
       );
-      if (result) {
-        return this.sendSuccess(
-          res,
-          { message: 'Успешное обновление городов' },
-          HttpResponses.CREATED,
-        );
+      if (!result) {
+        throw new Error();
       }
+      return this.sendSuccess(res, result, HttpResponses.CREATED);
     } catch {
       return this.sendError(res, new Error('Ошибка обновления городов'), HttpResponses.BAD_Request);
     }
